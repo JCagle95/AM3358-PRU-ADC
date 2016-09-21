@@ -1,0 +1,4 @@
+#!/bin/bash
+
+pasm -b ram_writing.p
+gcc -o RAMWriting RAMWriting.c -lprussdrv -lpthread
