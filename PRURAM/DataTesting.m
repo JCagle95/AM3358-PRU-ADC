@@ -13,4 +13,5 @@ for index = 0:length(file)-1
     if (Data(1)~=4+4000*(index))
         fprintf('Inaccurate Data in %s\n',sprintf('Data%d.bin',index));
     end
+   
 end

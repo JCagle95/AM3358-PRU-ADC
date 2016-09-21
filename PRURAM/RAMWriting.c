@@ -47,11 +47,15 @@ void* pru_ram_task(void *arg){
 	info.pru_data->data_size = ARRAY_SIZE * sizeof(uint32_t);
 	int Counter = 0;
 
+	uint32_t dataPoint[100000];
+	int pointer = 0;
+	FILE * pFile;
 	while(info.pru_data->run_flag){
-		char str[80];
-		sprintf(str, "Data%d.bin",Counter);
-		FILE * pFile;
-		pFile = fopen(str,"wb");
+		if (pointer == 0){
+			char str[80];
+			sprintf(str, "Data%d.bin",Counter);
+			pFile = fopen(str,"wb");
+		}
 		int timer = 0;
 		while (info.pru_data->data_ready == Counter && info.pru_data->run_flag){
 			//printf("%d\n",info.pru_data->run_flag);
@@ -60,13 +64,22 @@ void* pru_ram_task(void *arg){
 		}
 		Counter++;
 		if (Counter % 2 == 1){
-			fwrite(info.pru_data->data1,sizeof(uint32_t),ARRAY_SIZE,pFile);
+			//fwrite(info.pru_data->data1,sizeof(uint32_t),ARRAY_SIZE,pFile);
+			memcpy(dataPoint+pointer,info.pru_data->data1,ARRAY_SIZE*4);
+			pointer += ARRAY_SIZE;
 			printf("%d Data Point Reading: %4u00us, first point is %d\n",ARRAY_SIZE*2, timer, info.pru_data->data1[0]);
 		} else {
-			fwrite(info.pru_data->data2,sizeof(uint32_t),ARRAY_SIZE,pFile);
+			//fwrite(info.pru_data->data2,sizeof(uint32_t),ARRAY_SIZE,pFile);
+			memcpy(dataPoint+pointer,info.pru_data->data2,ARRAY_SIZE*4);
+			pointer += ARRAY_SIZE;
 			printf("%d Data Point Reading: %4u00us, first point is %d\n",ARRAY_SIZE*2, timer, info.pru_data->data2[0]);
 		}
-		fclose(pFile);
+		if (pointer==100000)
+		{
+			fwrite(dataPoint,sizeof(uint32_t),100000,pFile);
+			fclose(pFile);
+			pointer = 0;
+		}
 		fflush(stdout);
 	}
 	workthread_running = 0;
