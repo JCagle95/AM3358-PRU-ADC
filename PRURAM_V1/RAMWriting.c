@@ -25,6 +25,7 @@ typedef struct {
 	uint32_t run_flag;
 	uint32_t data_ready;
 	uint32_t data_size;
+	//uint32_t delay;
 	uint32_t data1[ARRAY_SIZE];
 	uint32_t data2[ARRAY_SIZE];
 } pru_data;
@@ -63,10 +64,12 @@ void* pru_ram_task(void *arg){
 
 	// Initialize Parameters
 	info.pru_data->run_flag = 1;
+	//info.pru_data->delay = 20;
 	info.pru_data->data_ready = 0;
 	info.pru_data->data_size = ARRAY_SIZE * sizeof(uint32_t);
 
-	prussdrv_exec_program (PRU_NUM0, "./ram_writing.bin");
+	//prussdrv_exec_program (PRU_NUM0, "./ram_writing.bin");
+	prussdrv_exec_program (PRU_NUM0, "./ADCwriteRAM.bin");
 
 	int Counter = 0, pointer = 0;
 	uint32_t dataPoint[100000];
@@ -88,17 +91,18 @@ void* pru_ram_task(void *arg){
 			//fwrite(info.pru_data->data1,sizeof(uint32_t),ARRAY_SIZE,pFile);
 			memcpy(dataPoint+pointer,info.pru_data->data1,ARRAY_SIZE*4);
 			pointer += ARRAY_SIZE;
-			printf("%d Data Point Reading: %4u00us, first point is %d\n",ARRAY_SIZE*2, timer, info.pru_data->data1[0]);
+			//printf("%d Data Point Reading: %4u00us, first point is %d\n",ARRAY_SIZE*2, timer, info.pru_data->data1[0]);
 		} else {
 			//fwrite(info.pru_data->data2,sizeof(uint32_t),ARRAY_SIZE,pFile);
 			memcpy(dataPoint+pointer,info.pru_data->data2,ARRAY_SIZE*4);
 			pointer += ARRAY_SIZE;
-			printf("%d Data Point Reading: %4u00us, first point is %d\n",ARRAY_SIZE*2, timer, info.pru_data->data2[0]);
+			//printf("%d Data Point Reading: %4u00us, first point is %d\n",ARRAY_SIZE*2, timer, info.pru_data->data2[0]);
 		}
 		if (pointer==100000)
 		{
 			fwrite(dataPoint,sizeof(uint32_t),100000,pFile);
 			fclose(pFile);
+			printf("File Written\n");
 			pointer = 0;
 		}
 		fflush(stdout);
@@ -129,7 +133,7 @@ int main (void)
 	int input;
 	while (taskContinue)
 	{
-		printf("1: Task Start, 2: Task End, 3: QUIT\nPlease enter: ");
+		printf("1: Task Start, 2: Task End, 3: QUIT, 4: Change Delay\nPlease enter: ");
 		scanf("%d",&input);
 		printf("\n");
 
@@ -156,6 +160,10 @@ int main (void)
 				break;
 			default:
 				printf("Unknown input\n");
+
+			case 4:
+				scanf("%d",&input);
+				//info.pru_data->delay = input;
 		}
 	}
 	
