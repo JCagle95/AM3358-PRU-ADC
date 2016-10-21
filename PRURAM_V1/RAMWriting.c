@@ -74,11 +74,11 @@ void* pru_ram_task(void *arg){
 	int Counter = 0, pointer = 0;
 	uint32_t dataPoint[100000];
 	FILE * pFile;
+	char str[80];
+	sprintf(str, "Data%d.bin",Counter);
+	pFile = fopen(str,"wb");
 	while(info.pru_data->run_flag){
 		if (pointer == 0){
-			char str[80];
-			sprintf(str, "Data%d.bin",Counter);
-			pFile = fopen(str,"wb");
 		}
 		int timer = 0;
 		while (info.pru_data->data_ready == Counter && info.pru_data->run_flag){
@@ -101,13 +101,13 @@ void* pru_ram_task(void *arg){
 		if (pointer==100000)
 		{
 			fwrite(dataPoint,sizeof(uint32_t),100000,pFile);
-			fclose(pFile);
-			printf("File Written\n");
 			pointer = 0;
 		}
 		fflush(stdout);
 	}
 
+	fclose(pFile);
+	printf("File Written\n");
 	workthread_running = 0;
 
 	// Wait for PRU0 to halt
