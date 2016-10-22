@@ -1,0 +1,32 @@
+/dts-v1/;
+/plugin/;
+
+/{
+	compatible = "ti,beaglebone", "ti,beaglebone-black";
+	part_number = "PRU-INPUT";
+	
+	exclusive-use = "P9.30";
+
+	fragment@0 {
+		target = <&am33xx_pinmux>;
+		__overlay__ {
+			pru_input: pinmux_pru_input_pinctl {
+				pinctrl-single,pins = <
+					0x198 0x06
+				>;
+			};
+		};
+	};
+
+	fragment@1 {
+		target = <&ocp>;
+		__overlay__ {
+			pru_input_pinctl_pinmux {
+				compatible = "bone-pinmux-helper";
+				status = "okey";
+				pinctrl-names = "default";
+				pinctrl-0 = <&pru_input>;
+			};
+		};
+	};
+};
