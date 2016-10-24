@@ -1,0 +1,50 @@
+/dts-v1/;
+/plugin/;
+
+/{
+    compatible = "ti,beaglebone", "ti,beaglebone-black";
+    part_number = "BS_PINMODE_PRU_OUT";
+
+    exclusive-use =
+	    "P8.41",
+    	"pr1_pru1_pru_r30_4",
+	    "P8.42",
+    	"pr1_pru1_pru_r30_5",
+	    "P8.43",
+    	"pr1_pru1_pru_r30_2",
+    	"P8.44",
+    	"pr1_pru1_pru_r30_3",
+    	"P8.45",
+    	"pr1_pru1_pru_r30_0",
+    	"P8.46",
+    	"pr1_pru1_pru_r30_1";
+    
+	// AM335X Technical Reference Manual - Table 9-61
+    fragment@0 {
+    	target = <&am33xx_pinmux>;
+    	__overlay__ {
+        	bs_pinmode_pru_out: pinmux_bs_pinmode_pru_out {
+            	pinctrl-single,pins = <
+					0x0A4 0x26		// P8.46 - MISO - Pull-down Enable - Input Enable - Mode 6
+					0x0A0 0x05		// P8.45 - MOSI - Pull-down Enable - Input Disable - Mode 5
+					0x0AC 0x05 		// P8.44 - SCLK - Pull-down Enable - Input Disable - Mode 5
+					0x0A8 0x05		// P8.43 - FS CS - Pull-down Enable - Input Disable - Mode 5
+					0x0B0 0x05 		// P8.41 - CONVST - Pull-down Enable - Input Disable - Mode 5
+					0x0B4 0x26		// P8.42 - EOC - Pull-down Enable - Input Enable - Mode 6
+				>;
+        	};
+    	};
+	};
+
+    fragment@1 {
+        target = <&ocp>;
+        __overlay__ {
+            bs_pinmode_pru_out_pinmux {
+                compatible = "bone-pinmux-helper";
+                status = "okay";
+                pinctrl-names = "default";
+                pinctrl-0 = <&bs_pinmode_pru_out>;
+            };
+        };
+    };
+};
