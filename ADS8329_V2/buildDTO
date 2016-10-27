@@ -1,0 +1,2 @@
+dtc -O dtb -I dts -o /lib/firmware/PRU-SPI-00A0.dtbo -b 0 -@ PRU-SPI-00A0.dts
+dtc -O dtb -I dts -o /lib/firmware/BB-ENABLE-PRU-00A0.dtbo -b 0 -@ BB-ENABLE-PRU-00A0.dts

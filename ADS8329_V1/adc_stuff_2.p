@@ -32,7 +32,7 @@ START:
  ldi DELAY_REG, 100
 START_DELAY:			//Wait so ADC can initialize
   sub DELAY_REG, DELAY_REG, 1
-  qbne START_DELAY, DELAY_REG, 0 
+  qbne START_DELAY, DELAY_REG, 0
 
 
 

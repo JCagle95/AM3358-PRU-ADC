@@ -1,0 +1,2 @@
+echo BB-ENABLE-PRU > /sys/devices/platform/bone_capemgr/slots
+echo PRU-SPI > /sys/devices/platform/bone_capemgr/slots
