@@ -10,9 +10,9 @@
 .ends
 
 // Define Base address for memory
-#define	PRU_DATA1_BASE				0x00000000
-#define	PRU_DATA0_BASE				0x00002000
-#define	PRU_Shared_BASE				0x00010000
+#define	PRU1_DATA_BASE				0x00000000
+#define	PRU0_DATA_BASE				0x00002000
+#define	PRU_SHARED_BASE				0x00010000
 
 // Define Interrupt
 #define PRU0_PRU1_INTERRUPT     	0x11
