@@ -42,50 +42,50 @@
 #define EOC							R31.T5		// End of Conversion	P9.42 - Input
 
 START:
-	LDI		PRU_RAM_ADDRESS, PRU1_DATA_BASE
-	ADD		BLOCK1_BASE_ADDRESS, PRU_RAM_ADDRESS, OFFSET(dataLoader.Data)
-	MOV		BLOCK2_BASE_ADDRESS, PRU_SHARED_BASE
-	MOV		DATA_ADDRESS, BLOCK1_BASE_ADDRESS
-	LBBO	BLOCK_SIZE, PRU_RAM_ADDRESS, OFFSET(dataLoader.MaxSize), 4
-	LDI		BLOCK_COUNT, 0
+	LDI		PRU_RAM_ADDRESS, PRU1_DATA_BASE										// Store PRU1's base address in PRU_RAM_ADDRESS
+	ADD		BLOCK1_BASE_ADDRESS, PRU_RAM_ADDRESS, OFFSET(dataLoader.Data)		// The first data block start at base address with certain offset due to status bytes in struct.
+	MOV		BLOCK2_BASE_ADDRESS, PRU_SHARED_BASE								// The second data block has no offset because struct only present at the beginning.
+	MOV		DATA_ADDRESS, BLOCK1_BASE_ADDRESS									// Start our recording at the initial pointer of first data block.
+	LBBO	BLOCK_SIZE, PRU_RAM_ADDRESS, OFFSET(dataLoader.MaxSize), 4			// Determine the size of each data block (This is set in C-cdoe, in unit of [bytes])
+	LDI		BLOCK_COUNT, 0														// Block Count is a simple counter that signal C-code when one data block is ready to be read.
 
-	SET		FS
-	SET		CONVST
-	CLR		MOSI
-	SET		SCLK
+	SET		FS			// Initialization.1
+	SET		CONVST		// Initialization.2
+	CLR		MOSI		// Initialization.3
+	SET		SCLK		// Initialization.4
 
 SETUP:
-	LDI		OUTPUT_REG, 0b1011111111110111
-	JMP		MAIN_LOOP
+	LDI		OUTPUT_REG, 0b1011111111110111		// Load Configuration bits
+	JMP		MAIN_LOOP							// Skip Sampling
 
 SAMPLING:
-	LDI		OUTPUT_REG, 0b1011
+	LDI		OUTPUT_REG, 0b1011			// Load Sampling bits
 	CLR		CONVST 						// Signal conversion start
 	WBS		EOC    						// Wait for EOC to pull high
 	SET		CONVST						// Reset CONVST
 
 MAIN_LOOP:
-	CLR		FS
-	AND		DATA, DATA, 0
-	LDI		R0, 17
+	CLR		FS							// Frame Sync
+	AND		DATA, DATA, 0				// Reset Data register
+	LDI		R0, 17						// Load Cycle, because we decrement cycle register before check, we use 17 cycles.
 
 WRITE_DATA:
 	SUB		R0, R0, 1					// Next Bit
 	QBEQ	DATA_COMPLETE, R0, 0 		// Check to see if 16 bits are written/read already
-	QBBS	SDO_HIGH, OUTPUT_REG, 0
 
-	SDO_LOW:
-		CLR		MOSI
-		JMP		READ_DATA
-	SDO_HIGH:
-		SET		MOSI
+	QBBS	SDO_HIGH, OUTPUT_REG, 0		// Main Data writing code.1
+	SDO_LOW:							// Main Data writing code.2
+		CLR		MOSI					// Main Data writing code.3
+		JMP		READ_DATA				// Main Data writing code.4
+	SDO_HIGH:							// Main Data writing code.5
+		SET		MOSI					// Main Data writing code.6
 
 READ_DATA:
-	LSR		OUTPUT_REG, OUTPUT_REG, 1
-	CLR		SCLK
+	LSR		OUTPUT_REG, OUTPUT_REG, 1	// Right shift Output bytes
+	CLR		SCLK						// SCLK Falling Edge, the ADS will read our output bit now
 	ADD		R0, R0, 0					// Time (SCLKF - SDOVALID)
-	ADD		R0, R0, 0
-	ADD		R0, R0, 0
+	ADD		R0, R0, 0					// The time is supposed to be minimumly 7.5ns
+	ADD		R0, R0, 0					// Which is 1.5 clock cycle.
 
 	QBBC	LEFT_SHIFT, MISO			// Main data reading portion.1
 	SET		DATA.T0						// Main data reading portion.2
@@ -94,9 +94,9 @@ READ_DATA:
 
 	LDI		DELAY_REG, 9				// Delay for 9 Cycle,  total 15 Cycles LOW
 
-	DELAY_LOOP:
-		SUB		DELAY_REG, DELAY_REG, 1
-		QBLT	DELAY_LOOP, DELAY_REG, 0
+	DELAY_LOOP:								// This delay loop is used for both SCLK high and SCLK low
+		SUB		DELAY_REG, DELAY_REG, 1		// Delay 1 clock
+		QBLT	DELAY_LOOP, DELAY_REG, 0	// Back to delay until Delay-register is 0
 
 	QBBS	WRITE_DATA, SCLK			// Going back to Write Data if SCLK is High
 	SET		SCLK						// Rising Edge if SCLK is low
@@ -104,8 +104,8 @@ READ_DATA:
 	JMP		DELAY_LOOP					// Back to the Loop as SCLK High
 
 DATA_COMPLETE:
-	SET		FS							// De-select ADS8329
-	SBBO	DATA, DATA_ADDRESS, 0, 2	// Store 2 bytes of data (16-bit)
+	SET		FS										// De-select ADS8329
+	SBBO	DATA, DATA_ADDRESS, 0, 2				// Store 2 bytes of data (16-bit)
 	ADD 	DATA_ADDRESS, DATA_ADDRESS, 2			// Increment data pointer by 2 bytes
 
 	CLR		MOSI						// Reset Initial Condition.1
@@ -117,26 +117,26 @@ DATA_COMPLETE:
 	QBEQ	TRIGGER, DATA_ADDRESS, R1				// Check to see if the blocks are filled or not.4
 
 CHECK:
-	LBBO	R0, PRU_RAM_ADDRESS, OFFSET(dataLoader.RunFlag), 4
-	QBEQ	EXIT, R0, 0
-	LBBO	DELAY_REG, PRU_RAM_ADDRESS, OFFSET(dataLoader.Delay), 4
+	LBBO	R0, PRU_RAM_ADDRESS, OFFSET(dataLoader.RunFlag), 4			// Run Flag is a input from C-code to tell us when to stop
+	QBEQ	EXIT, R0, 0													// If RunFlag == False, we stop, jump to exit (Halt)
+	LBBO	DELAY_REG, PRU_RAM_ADDRESS, OFFSET(dataLoader.Delay), 4		// Update the Delay register in case sampling rate is altered in C-code
 
-INTERSAMPLE_DELAY:						// Intersample Delay will determine the sampling rate in general
-	SUB		DELAY_REG, DELAY_REG, 1
-	QBLT	INTERSAMPLE_DELAY, DELAY_REG, 0
-	JMP		SAMPLING
+INTERSAMPLE_DELAY:								// Intersample Delay will determine the sampling rate in general
+	SUB		DELAY_REG, DELAY_REG, 1				// The delay register contain the delay that tells us how long should we wait till next sample
+	QBLT	INTERSAMPLE_DELAY, DELAY_REG, 0		// Delay 1 clock
+	JMP		SAMPLING							// After delay, go to sample section to request sample
 
 TRIGGER:
-	ADD		BLOCK_COUNT, BLOCK_COUNT, 1
-	SBBO	BLOCK_COUNT, PRU_RAM_ADDRESS, OFFSET(dataLoader.DataReady), 4
-	QBBC	RESET_ADDRESS, BLOCK_COUNT, 0
-	MOV		DATA_ADDRESS, BLOCK2_BASE_ADDRESS
-	JMP		CHECK
+	ADD		BLOCK_COUNT, BLOCK_COUNT, 1										// Increment block when filled up.
+	SBBO	BLOCK_COUNT, PRU_RAM_ADDRESS, OFFSET(dataLoader.DataReady), 4	// Pass the current block count to C-code
+	QBBC	RESET_ADDRESS, BLOCK_COUNT, 0									// If bit 0 of Block Count is 0, we reset the address pointer back to data block 1.
+	MOV		DATA_ADDRESS, BLOCK2_BASE_ADDRESS								// Else we set the address pointer to data block 2.
+	JMP		CHECK															// Check if C-code is still running
 
 RESET_ADDRESS:
-	MOV		DATA_ADDRESS, BLOCK1_BASE_ADDRESS
-	JMP		CHECK
+	MOV		DATA_ADDRESS, BLOCK1_BASE_ADDRESS		// Reset address pointer back to data block 1
+	JMP		CHECK									// Check if C-code is still running
 
-EXIT:
-	MOV		R31.b0, PRU1_ARM_INTERRUPT + 16
-	HALT
+EXIT:												// Exit the program
+	MOV		R31.b0, PRU1_ARM_INTERRUPT + 16			// Send interrupt to C-program
+	HALT											// Halt the PRU1
