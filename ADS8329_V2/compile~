@@ -1,2 +1,0 @@
-pasm -b PRU-MCP3301.p
-gcc -o PRU-MCP3301 PRU-MCP3301.c -lprussdrv -lpthread
