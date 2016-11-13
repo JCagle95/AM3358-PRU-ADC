@@ -1,0 +1,2 @@
+pasm -b ADS8329.p
+/root/ADS8329/HDF5/bin/h5cc -o ADS8329 ADS8329.c -lprussdrv -lpthread

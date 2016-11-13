@@ -64,7 +64,7 @@ void* readInput(void *arg) {
 	pru_input->RunFlag = 1;
 	pru_input->MaxSize = ARRAY_SIZE * 2;
 	pru_input->DataReady = 0;
-	pru_input->Delay = 20000;
+	pru_input->Delay = 551;
 
 	prussdrv_exec_program(PRU_NUM1, "./PRU-ADS8329.bin");
 
@@ -82,9 +82,11 @@ void* readInput(void *arg) {
 
 		if (blockCount % 2 == 1){
 			memcpy(dataPoint+pointer, pru_input->Data, ARRAY_SIZE*2);
+			//printf("%f\n",(float)dataPoint[pointer]/65535.0*5.0);
 			pointer += ARRAY_SIZE;
 		} else {
 			memcpy(dataPoint+pointer, block2_data, ARRAY_SIZE*2);
+			//printf("%f\n",(float)dataPoint[pointer]/65535.0*5.0);
 			pointer += ARRAY_SIZE;
 		}
 

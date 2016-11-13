@@ -1,2 +1,3 @@
 pasm -b PRU-ADS8329.p
 gcc -o PRU-ADS8329 PRU-ADS8329.c -lprussdrv -lpthread
+./hdf5-1.8.17/hdf5/bin/h5cc -o PRU-ADS8329_V2 PRU-ADS8329_V2.c -lprussdrv -lpthread

@@ -60,7 +60,6 @@ SETUP:
 
 SAMPLING:
 	LDI		OUTPUT_REG, 0b1011			// Load Sampling bits
-	CLR		CONVST 						// Signal conversion start
 	WBS		EOC    						// Wait for EOC to pull high
 	SET		CONVST						// Reset CONVST
 
@@ -82,7 +81,7 @@ WRITE_DATA:
 
 READ_DATA:
 	LSR		OUTPUT_REG, OUTPUT_REG, 1	// Right shift Output bytes
-	CLR		SCLK						// SCLK Falling Edge, the ADS will read our output bit now
+	SET		SCLK						// SCLK Falling Edge, the ADS will read our output bit now
 	ADD		R0, R0, 0					// Time (SCLKF - SDOVALID)
 	ADD		R0, R0, 0					// The time is supposed to be minimumly 7.5ns
 	ADD		R0, R0, 0					// Which is 1.5 clock cycle.
@@ -98,18 +97,20 @@ READ_DATA:
 		SUB		DELAY_REG, DELAY_REG, 1		// Delay 1 clock
 		QBLT	DELAY_LOOP, DELAY_REG, 0	// Back to delay until Delay-register is 0
 
-	QBBS	WRITE_DATA, SCLK			// Going back to Write Data if SCLK is High
-	SET		SCLK						// Rising Edge if SCLK is low
+	QBBC	WRITE_DATA, SCLK			// Going back to Write Data if SCLK is High
+	CLR		SCLK						// Rising Edge if SCLK is low
 	LDI		DELAY_REG, 9				// Delay for 9 Cycle,  total 15 Cycles HIGH
 	JMP		DELAY_LOOP					// Back to the Loop as SCLK High
 
 DATA_COMPLETE:
 	SET		FS										// De-select ADS8329
+	LSR		DATA, DATA, 1
 	SBBO	DATA, DATA_ADDRESS, 0, 2				// Store 2 bytes of data (16-bit)
 	ADD 	DATA_ADDRESS, DATA_ADDRESS, 2			// Increment data pointer by 2 bytes
 
 	CLR		MOSI						// Reset Initial Condition.1
 	SET		SCLK						// Reset Initial Condition.2
+	CLR		CONVST 						// Signal conversion start
 
 	ADD		R1, BLOCK1_BASE_ADDRESS, BLOCK_SIZE		// Check to see if the blocks are filled or not.1
 	QBEQ	TRIGGER, DATA_ADDRESS, R1				// Check to see if the blocks are filled or not.2
@@ -138,5 +139,5 @@ RESET_ADDRESS:
 	JMP		CHECK									// Check if C-code is still running
 
 EXIT:												// Exit the program
-	MOV		R31.b0, PRU1_ARM_INTERRUPT + 16			// Send interrupt to C-program
+	MOV		R31.b0, PRU1_ARM_INTERRUPT + 15			// Send interrupt to C-program
 	HALT											// Halt the PRU1
