@@ -81,7 +81,7 @@ WRITE_DATA:
 
 READ_DATA:
 	LSR		OUTPUT_REG, OUTPUT_REG, 1	// Right shift Output bytes
-	SET		SCLK						// SCLK Falling Edge, the ADS will read our output bit now
+	SET		SCLK						// SCLK Rising Edge, the ADS will read our output bit now
 	ADD		R0, R0, 0					// Time (SCLKF - SDOVALID)
 	ADD		R0, R0, 0					// The time is supposed to be minimumly 7.5ns
 	ADD		R0, R0, 0					// Which is 1.5 clock cycle.
@@ -98,7 +98,7 @@ READ_DATA:
 		QBLT	DELAY_LOOP, DELAY_REG, 0	// Back to delay until Delay-register is 0
 
 	QBBC	WRITE_DATA, SCLK			// Going back to Write Data if SCLK is High
-	CLR		SCLK						// Rising Edge if SCLK is low
+	CLR		SCLK						// Falling Edge if SCLK is low
 	LDI		DELAY_REG, 9				// Delay for 9 Cycle,  total 15 Cycles HIGH
 	JMP		DELAY_LOOP					// Back to the Loop as SCLK High
 

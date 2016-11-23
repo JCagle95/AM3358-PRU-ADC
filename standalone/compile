@@ -1,0 +1,3 @@
+pasm -b ADS8329.p
+gcc -o ADS8329 ADS8329.c -lprussdrv
+g++ -std=c++11 -o main main.cpp src/BMP180.cpp src/GPIO.cpp src/GPIOTest.cpp src/UART.cpp -Iinclude -lpthread
