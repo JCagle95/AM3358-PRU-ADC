@@ -11,6 +11,6 @@ public:
     int peek(void);                         // retrieve number of bytes in the buffer
     int send(uint8_t *output, int len);     // send function
     int receive(int len);                   // receive function
-
+    
     uint8_t input[96];                      // byte array containing data received from UART
 };

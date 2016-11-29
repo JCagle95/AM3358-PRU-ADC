@@ -86,7 +86,6 @@ int UART::peek(void) {
 /* Send Data through UART */
 int UART::send(uint8_t *output, int len) {
     write(fid, output, len);
-    cout << "Sent " << len << " bytes" << endl;
     return 0;
 }
 

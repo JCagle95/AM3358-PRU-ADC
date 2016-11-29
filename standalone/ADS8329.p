@@ -60,7 +60,7 @@ SETUP:
 
 SAMPLING:
 	LDI		OUTPUT_REG, 0b1011			// Load Sampling bits
-	//WBS		EOC    						// Wait for EOC to pull high
+	WBS		EOC    						// Wait for EOC to pull high
 	SET		CONVST						// Reset CONVST
 
 MAIN_LOOP:

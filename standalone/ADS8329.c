@@ -16,7 +16,7 @@
 #define PRU_NUM0	0
 #define PRU_NUM1	1
 #define ARRAY_SIZE	5000
-#define MAX_CYCLE	50
+#define MAX_CYCLE	60
 
 typedef struct {
 	uint32_t RunFlag;
@@ -29,7 +29,8 @@ typedef struct {
 uint32_t getTime() {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	return (tv.tv_sec * 1000000 + tv.tv_usec);
+	uint32_t milliseconds = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+	return milliseconds;
 }
 
 pru_data *pru_input;
@@ -65,7 +66,7 @@ int main(int argc, char *argv[]) {
 	pru_input->DataReady = 0;
 	pru_input->Delay = 555;
 
-	prussdrv_exec_program(PRU_NUM1, "/root/PRU/ADS8329.bin");
+	prussdrv_exec_program(PRU_NUM1, "/root/FunctionalityTest/ADS8329.bin");
 	int blockCount = 0, pointer = 0;
 	uint16_t dataPoint[ARRAY_SIZE*MAX_CYCLE];
 	char str[80];
@@ -73,6 +74,11 @@ int main(int argc, char *argv[]) {
     struct tm tm = *localtime(&t);
 	sprintf(str, "/root/SD/Data/%d_%d_%d_%d_%d_%d.bin", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 	FILE *pFile;
+	pFile = fopen(str, "wb");
+
+	sprintf(str, "/root/SD/Data/%d_%d_%d_%d_%d_%d.txt", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	FILE *logFile;
+	logFile = fopen(str, "wb");
 
 	uint32_t start, now;
 	start = getTime();
@@ -92,18 +98,20 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (pointer==MAX_CYCLE*ARRAY_SIZE){
-			pFile = fopen(str, "wb");
 			fwrite(dataPoint,2,MAX_CYCLE*ARRAY_SIZE,pFile);
-			fclose(pFile);
 			pointer = 0;
-			printf("Write Dataset\t");
-			printf("Current Time: %d / %d sec\n", getTime()*1000000, TimeLimit);
+			fprintf(logFile, "Current Time: %.2f / %d sec\n", (now - start)/1000.0, TimeLimit);
+			printf("Current Data: %d\n", dataPoint[MAX_CYCLE*ARRAY_SIZE-1]);
 		}
 
 		now = getTime();
 
-		if (now - start > TimeLimit * 1000000) {
-            pru_input->RunFlag = 0;
+		if (now - start > TimeLimit * 1000) {
+			fprintf(logFile, "Current Time: %.4f / %d sec\n", (now - start)/1000.0, TimeLimit);
+			printf("Stopped!\n");
+      pru_input->RunFlag = 0;
+			fclose(pFile);
+			fclose(logFile);
 		}
 
 		fflush(stdout);

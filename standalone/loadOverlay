@@ -1,2 +1,3 @@
 echo PRU-ENABLE > /sys/devices/platform/bone_capemgr/slots
 echo PRU-SPI > /sys/devices/platform/bone_capemgr/slots
+echo BB-ADC > /sys/devices/platform/bone_capemgr/slots
