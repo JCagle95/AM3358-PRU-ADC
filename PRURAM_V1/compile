@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pasm -b ram_writing.p
-pasm -b ADCwriteRAM.p
-pasm -b ADCwriteRAM_2.p
-gcc -o RAMWriting RAMWriting.c -lprussdrv -lpthread

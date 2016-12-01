@@ -1,7 +1,0 @@
-#!/bin/bash
-
-gcc -o loader loader.c -lprussdrv
-pasm -b adc_stuff_2.p
-dtc -O dtb -I dts -o /lib/firmware/PRU_ADC_PINCTL-00A0.dtbo -b 0 -@ PRU_ADC_PINCTL-00A0.dts
-dtc -O dtb -I dts -o /lib/firmware/BB-ENABLE-PRU-00A0.dtbo -b 0 -@ BB-ENABLE-PRU.dts
-

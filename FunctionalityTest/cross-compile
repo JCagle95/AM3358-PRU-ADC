@@ -1,0 +1,2 @@
+arm-linux-gnueabi-gcc -o spi_test spi_test.c
+arm-linux-gnueabi-g++ -std=c++11 -o main main.cpp src/BMP180.cpp src/GPIO.cpp src/UART.cpp src/MCP4725.cpp -Iinclude -lpthread

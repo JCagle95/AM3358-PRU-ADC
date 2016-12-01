@@ -1,2 +1,0 @@
-pasm -b PRU-INPUT.p
-gcc -o PRU-INPUT PRU-INPUT.c -lprussdrv -lpthread
