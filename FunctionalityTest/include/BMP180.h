@@ -1,5 +1,5 @@
-#ifndef BMP180_H_
-#define BMP180_H_
+#ifndef BMP180_H
+#define BMP180_H
 
 #include <stdint.h>
 
@@ -49,14 +49,9 @@ typedef struct {
 	int16_t  mb;
 	int16_t  mc;
 	int16_t  md;
-}BMP180_calib_data;
+} BMP180_calib_data;
 
 class BMP180 {
-public:
-	BMP180(int bus_interface, bmp085_mode_t bmp085_mode);
-	void getTemperature(float *temperature);
-	void getPressure(float *pressure);
-	bool sensorState;
 private:
 	BMP180_calib_data bmp180_coe;
 	bmp085_mode_t BMP_Mode;
@@ -67,9 +62,15 @@ private:
 	bool readBuf(byte reg, uint8_t *output, int len);
 	bool readS16(byte reg, int16_t *value);
 	int32_t computeB5(int32_t ut);
-	void readCoefficients();
-	void readRawTemperature(int32_t *temperature);
-	void readRawPressure(int32_t *pressure);
+	bool readCoefficients();
+	bool readRawTemperature(int32_t *temperature);
+	bool readRawPressure(int32_t *pressure);
+public:
+	BMP180(int bus_interface);
+	bool init(bmp085_mode_t bmp085_mode);
+	bool getTemperature(float *temperature);
+	bool getPressure(float *pressure);
+	bool sensorState;
 };
 
 #endif /* BMP180_H_ */

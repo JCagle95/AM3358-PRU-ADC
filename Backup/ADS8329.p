@@ -50,6 +50,7 @@ START:
 	LDI		BLOCK_COUNT, 0														// Block Count is a simple counter that signal C-code when one data block is ready to be read.
 
 	SET		FS			// Initialization.1
+	SET		CONVST		// Initialization.2
 	CLR		MOSI		// Initialization.3
 	SET		SCLK		// Initialization.4
 
@@ -59,7 +60,8 @@ SETUP:
 
 SAMPLING:
 	LDI		OUTPUT_REG, 0b1011			// Load Sampling bits
-	WBS		EOC							// Wait for EOC to pull high
+	//WBS		EOC    						// Wait for EOC to pull high
+	SET		CONVST						// Reset CONVST
 
 MAIN_LOOP:
 	CLR		FS							// Frame Sync
@@ -103,13 +105,13 @@ READ_DATA:
 DATA_COMPLETE:
 	SET		FS										// De-select ADS8329
 	LSR		DATA, DATA, 1							// Right Shift Once to obtain 16-bit correct data
+	LDI		DATA, 100
 	SBBO	DATA, DATA_ADDRESS, 0, 2				// Store 2 bytes of data (16-bit)
 	ADD 	DATA_ADDRESS, DATA_ADDRESS, 2			// Increment data pointer by 2 bytes
 
 	CLR		MOSI						// Reset Initial Condition.1
 	SET		SCLK						// Reset Initial Condition.2
-	WBC		CONVST						// Wait for Convertion Start
-	WBS		CONVST						// Wait for Convertion Start
+	CLR		CONVST 						// Signal conversion start
 
 	ADD		R1, BLOCK1_BASE_ADDRESS, BLOCK_SIZE		// Check to see if the blocks are filled or not.1
 	QBEQ	TRIGGER, DATA_ADDRESS, R1				// Check to see if the blocks are filled or not.2
@@ -119,7 +121,12 @@ DATA_COMPLETE:
 CHECK:
 	LBBO	R0, PRU_RAM_ADDRESS, OFFSET(dataLoader.RunFlag), 4			// Run Flag is a input from C-code to tell us when to stop
 	QBEQ	EXIT, R0, 0													// If RunFlag == False, we stop, jump to exit (Halt)
-	JMP		SAMPLING													// After delay, go to sample section to request sample
+	LBBO	DELAY_REG, PRU_RAM_ADDRESS, OFFSET(dataLoader.Delay), 4		// Update the Delay register in case sampling rate is altered in C-code
+
+INTERSAMPLE_DELAY:								// Intersample Delay will determine the sampling rate in general
+	SUB		DELAY_REG, DELAY_REG, 1				// The delay register contain the delay that tells us how long should we wait till next sample
+	QBLT	INTERSAMPLE_DELAY, DELAY_REG, 0		// Delay 1 clock
+	JMP		SAMPLING							// After delay, go to sample section to request sample
 
 TRIGGER:
 	ADD		BLOCK_COUNT, BLOCK_COUNT, 1										// Increment block when filled up.

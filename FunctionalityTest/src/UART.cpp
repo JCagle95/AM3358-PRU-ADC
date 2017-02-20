@@ -12,23 +12,27 @@
 
 using namespace std;
 
-/* Constructer */
-UART::UART(int ID, int BAUDRATE) {
+/* Close the file handler when destroying this object */
+UART::~UART (void) {
+    close(this->fid);
+}
 
+/* Constructer */
+bool UART::init (int ID, int BAUDRATE) {
     // Initialize UART File Control
     char filename[80];
     sprintf(filename, "/dev/ttyO%d", ID);
 
-    fid = open(filename, O_RDWR | O_NOCTTY | O_NDELAY);
-    if (fid < 0) {
+    this->fid = open(filename, O_RDWR | O_NOCTTY | O_NDELAY);
+    if (this->fid < 0) {
         perror("UART: Failed to Open");
-        return;
+        return false;
     }
-    fcntl(fid, F_SETFL, FNDELAY);
+    fcntl(this->fid, F_SETFL, FNDELAY);
 
     // termios is the UART Configuration structure
     struct termios old_config, config;
-    tcgetattr(fid, &old_config);        // Get Old Configuration
+    tcgetattr(this->fid, &old_config);        // Get Old Configuration
     bzero(&config, sizeof(config));     // Clear Configuration
 
     // Convert Int to Linux Baudrate value
@@ -67,37 +71,34 @@ UART::UART(int ID, int BAUDRATE) {
     config.c_lflag = 0;
     config.c_cc[VTIME] = 0;
     config.c_cc[VMIN] = 96;
-    tcflush(fid, TCIFLUSH);
-    tcsetattr(fid, TCSANOW, &config);
-}
+    tcflush(this->fid, TCIFLUSH);
+    tcsetattr(this->fid, TCSANOW, &config);
 
-/* Close the file handler when destroying this object */
-UART::~UART(void) {
-    close(fid);
+    return true;
 }
 
 /*  Check for available bytes.
     Return bytes available in the UART buffer */
-int UART::peek(void) {
+int UART::peek (void) {
     int BytesAvailable;
-    ioctl(fid, FIONREAD, &BytesAvailable);
+    ioctl(this->fid, FIONREAD, &BytesAvailable);
     return BytesAvailable;
 }
 
 /* Send Data through UART */
-int UART::send(uint8_t *output, int len) {
-    write(fid, output, len);
+int UART::send (uint8_t *output, int len) {
+    write(this->fid, output, len);
     return 0;
 }
 
 /*  Receive Data from UART, and stored in byte array "input"
     Return number of Bytes read  */
-int UART::receive(int len) {
-    return read(fid, input, len);
+int UART::receive (uint8_t *input, int len) {
+    return read(this->fid, input, len);
 }
 
 /* Use this function as if you are using printf function */
-int UART::printf(const char *format, ...) {
+int UART::printf (const char *format, ...) {
     va_list args;
     va_start(args, format);
     char buf[96];

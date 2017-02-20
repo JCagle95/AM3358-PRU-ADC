@@ -1,20 +1,19 @@
 #include <stdlib.h>
-#include <iostream>
-#include <pthread.h>
-#include <time.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <string.h>
 #include <unistd.h>
+
+#include <iostream>
+#include <string.h>
 #include <fcntl.h>
 #include <chrono>
-#include <condition_variable>
-#include <sys/ioctl.h>
-#include <linux/types.h>
-#include <linux/spi/spidev.h>
 
-#include "GPIO.h"
+#include <pthread.h>
+#include <time.h>
+
+#include "Digital.h"
 #include "UART.h"
+#include "ADS8329.h"
 #include "BMP180.h"
 #include "MCP4725.h"
 
@@ -34,6 +33,7 @@ void* GPIOTest(void *arg);
 void* I2CTest(void *arg);
 void* PRUTest(void *arg);
 void* Stress(void *arg);
+void* SPITest(void *arg);
 
 int main(int argc, char *argv[]){
 
@@ -52,7 +52,8 @@ int main(int argc, char *argv[]){
     struct ThreadParams args;
 
     // Initializing UART Class
-    UART Serial(4, 9600);
+    UART Serial;
+    Serial.init(4, 9600);
 
     // Initial Block Start - 30 minutes Idle with temperature logging through UART
     for (int i = 0; i < 1800 / DIVISION; i += 5) {
@@ -248,6 +249,12 @@ struct tm logTime(ofstream &file){
 
 // GPIO Thread. This thread will continuously flashing LEDs in the order indicated in GPIO.h
 void* GPIOTest(void *arg){
+    // GPIO Pins Definition
+    int pinID[43] = {60, 50, 48, 51, 49, 15, 117, 14, 115, 113, 111, 112, 110, 20, 7,
+        66, 67, 69, 68, 45, 44, 23, 26, 47, 46, 27, 65, 22, 79, 76, 77,
+        86, 61, 88, 87, 89, 10, 11, 9, 81, 8, 80, 78};
+    int numLED = 43;
+
     // Retrieve the input arguments
     struct ThreadParams *input = (struct ThreadParams *) arg;
     Time::time_point start = input->start;
@@ -257,19 +264,19 @@ void* GPIOTest(void *arg){
     GPIO LED;
 
     // First, export all GPIO as output and pulled low.
-    for (int i = 0; i < LED.numLED; i++) {
-        LED.exportGPIO(LED.pinID[i], true);
+    for (int i = 0; i < numLED; i++) {
+        LED.exportGPIO(pinID[i], true);
         usleep(10000);
-        LED.setDirection(LED.pinID[i], GPIO_OUTPUT);
+        LED.setDirection(pinID[i], GPIO_OUTPUT);
         usleep(10000);
     }
 
     while (true) {
         // Loop through the LEDs, toggle high for 500ms and low. 100ms interval between lightup of each LEDs
-        for (int i = 0; i < LED.numLED; i++) {
-            LED.setValue(LED.pinID[i], GPIO_HIGH);
+        for (int i = 0; i < numLED; i++) {
+            LED.setValue(pinID[i], GPIO_HIGH);
             usleep(500000);
-            LED.setValue(LED.pinID[i], GPIO_LOW);
+            LED.setValue(pinID[i], GPIO_LOW);
             usleep(1000);
         }
 
@@ -282,8 +289,8 @@ void* GPIOTest(void *arg){
     }
 
     // When complete, unexport all GPIOs
-    for (int i = 0; i < LED.numLED; i++) {
-        LED.exportGPIO(LED.pinID[i], false);
+    for (int i = 0; i < numLED; i++) {
+        LED.exportGPIO(pinID[i], false);
     }
 
     return NULL;
@@ -295,10 +302,13 @@ void* PRUTest(void *arg){
     Time::time_point start = input->start;
     int RunTime = input->RunTime_Sec;
 
-    // Calling the program with time indicated in RunTime. Please refer to ADS8329.c for details
-    char CommandLine[80];
-    sprintf(CommandLine, "/root/FunctionalityTest/ADS8329 %d", RunTime);
-    system(CommandLine);
+    ADS8329 ADC;
+    if (!ADC.init()) {
+        printf("Error, cannot start PRU\n");
+        return NULL;
+    }
+
+    ADC.begin(start, RunTime);
 
     return NULL;
 }
@@ -317,7 +327,7 @@ void* I2CTest(void *arg){
     I2CRecord.open(filename, ofstream::out | ofstream::app);
 
     // Time at which I2C Test Started
-    tm = logTime(I2CRecord);
+    struct tm tm = logTime(I2CRecord);
 
     // Initializing variables and I2C Bus
 	float temperature, pressure;
@@ -329,9 +339,13 @@ void* I2CTest(void *arg){
 	}
 
     // Initialize the BMP180 sensor and MCP4725 DAC.
-    BMP180 sensor(bus_interface,BMP085_MODE_ULTRAHIGHRES);
+    BMP180 sensor(bus_interface);
     MCP4725 DAC(bus_interface);
 
+    bool sensorState = sensor.init(BMP085_MODE_ULTRAHIGHRES);
+    if (!sensorState) {
+
+    }
 
     while (true) {
 

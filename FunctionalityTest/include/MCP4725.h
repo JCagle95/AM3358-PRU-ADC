@@ -1,3 +1,6 @@
+#ifndef MCP4725_H
+#define MCP4725_H
+
 #include <stdint.h>
 
 #define MCP4725_CMD_WRITEDAC            (0x40)  // Writes data to the DAC
@@ -6,12 +9,13 @@
 #define MCP4725_EXTENDED_ADDRESS        (0x63)	// Only use if A0 is loaded
 
 class MCP4725 {
-public:
-
-	// initializer
-	MCP4725(int bus_interface);
-	bool setVoltage(uint16_t Voltage, bool EEPROM);
 private:
 	// Store the I2C Linux Kernel handler
 	int interface;
+public:
+	// initializer
+	MCP4725(int bus_interface);
+	bool setVoltage(uint16_t Voltage, bool EEPROM);
 };
+
+#endif

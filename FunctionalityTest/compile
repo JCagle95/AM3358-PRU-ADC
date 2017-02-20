@@ -1,4 +1,2 @@
 pasm -b ADS8329.p
-gcc -o ADS8329 ADS8329.c -Iinclude -lprussdrv
-gcc -o spi_test spi_test.c
-g++ -std=c++11 -o main main.cpp src/BMP180.cpp src/GPIO.cpp src/UART.cpp src/MCP4725.cpp -Iinclude -lpthread
+g++ -std=c++11 -o main main.cpp src/BMP180.cpp src/Digital.cpp src/UART.cpp src/MCP4725.cpp src/ADS8329.cpp -Iinclude -lpthread -lprussdrv

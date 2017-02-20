@@ -11,16 +11,16 @@
 #include <fcntl.h>
 
 // Store the I2C handler for use.
-MCP4725::MCP4725(int bus_interface){
-    interface = bus_interface;
+MCP4725::MCP4725 (int bus_interface) {
+    this->interface = bus_interface;
 }
 
 // set voltage in 12-bit range
 // bool EEPROM determine if the setted voltage is going to be the default output at startup next time (typically not used)
-bool MCP4725::setVoltage(uint16_t Voltage, bool EEPROM){
+bool MCP4725::setVoltage (uint16_t Voltage, bool EEPROM) {
 
     // ioctl will try to establish connection with MCP4725
-    if (ioctl(interface,I2C_SLAVE, (uint8_t)MCP4725_DEFAULT_ADDRESS) < 0) {
+    if (ioctl(this->interface, I2C_SLAVE, (uint8_t)MCP4725_DEFAULT_ADDRESS) < 0) {
 		printf("MCP4725 :: Failed to acquire bus access and/or talk to slave.\n");
 		return false;
 	}
